@@ -1,0 +1,37 @@
+on init
+#	fake to CDP case
+#	write /sys/module/musb_hdrc/parameters/musb_skip_charge_detect 1
+
+# 	set battery thread free
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 0E8D
+    write /sys/class/android_usb/android0/idProduct 2008
+    write /sys/class/android_usb/android0/functions mtp
+    write /sys/class/android_usb/android0/enable 1
+
+#	make this twice to keep following action not race with batyery thread
+    write /sys/class/android_usb/android0/enable 0
+    write /sys/class/android_usb/android0/idVendor 0E8D
+    write /sys/class/android_usb/android0/idProduct 2008
+    write /sys/class/android_usb/android0/functions mtp
+    write /sys/class/android_usb/android0/enable 1
+
+# 	distinguish USB shoulde connect or not by this, CDP vs SDP
+	write /sys/devices/platform/mt_usb/cmode 2
+
+on fs
+	mount ext4 /dev/block/by-name/cache /cache noatime nosuid nodev nomblk_io_submit barrier=1
+
+on property:ro.debuggable=1
+# 	restore cmode to normal for making USB enumeration
+	write /sys/devices/platform/mt_usb/cmode 1
+service console /system/bin/sh
+    class core
+    console
+    disabled
+    #user shell
+    #group shell log
+    seclabel u:r:shell:s0
+
+service console /sbin/busybox sh
+    console
